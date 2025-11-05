@@ -437,7 +437,7 @@ module vga_monitor(
 
     // Si la linea es valida, NO estamos en el gap, Y el pixel esta encendido, mostrar texto
     else if ((inside_text_col0 || inside_text_col1 || inside_text_col2 || inside_text_col3 ) && pixel_on)
-      {vga_red, vga_green, vga_blue} = 24'hFFFFFF;
+      {vga_red, vga_green, vga_blue} = 24'h913E61;
     
     // De lo contrario, fondo
     else
