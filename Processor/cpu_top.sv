@@ -50,13 +50,21 @@ module cpu_top (
     logic        zero_flag;
 
     logic [31:0] immediate;
-    logic [31:0] alu_operand_b;
+    logic [31:0] alu_operand_b, alu_operand_a;
     logic [2:0]  imm_type;
-    logic        alu_src_b_sel;
-    logic        mem_read, mem_write, mem_to_reg;
+	 logic [2:0]  brOp;
+    logic        alu_src_b_sel, alu_src_a_sel;
+    logic        mem_read, mem_write; 
+	 logic [1:0]  mem_to_reg;
+	 logic		  branch_taken;
+	 logic 		  is_branch_instr;
+	 logic [31:0] branch_target;
+	 logic 		  is_jal;
+	 logic		  is_jalr;
+	 logic		  is_ebreak;
 
     logic [31:0] mem_read_data;
-    logic [31:0] writeback_data;
+    logic [31:0] writeback_data;	
 
     // Debug memory/register arrays
     logic [7:0]   mem_debug [0:127];
@@ -65,6 +73,9 @@ module cpu_top (
     logic [6:0]   imem_debug_addr;
     logic [31:0]  imem_debug_data;
 
+	 logic 			pc_src;	
+	 assign pc_src = (branch_taken & is_branch_instr) | is_jal;
+	 
     // =====================
     // Debug display selection (was missing)
     // =====================
@@ -76,6 +87,24 @@ module cpu_top (
     // =====================
 
     // Program Counter
+	 
+	 always_comb begin
+		if (is_ebreak) begin
+			pc_next = pc_current;   // Freeze
+		end
+		if (is_jalr) begin	
+          // JALR: Salta a (rs1 + imm)
+          pc_next = alu_result & 32'hFFFFFFFE;
+      end
+		else if (pc_src) begin
+          pc_next = branch_target;
+      end
+      else begin
+          // Normal
+          pc_next = pc_current + 4;
+      end
+	 end
+	 
     pc pc_unit (
         .clk(clk),
         .rst_n(rst_n),
@@ -99,11 +128,17 @@ module cpu_top (
         .MemRead(mem_read),
         .MemWrite(mem_write),
         .MemToReg(mem_to_reg),
+		  .aluB_src(alu_src_b_sel),
+		  .aluA_src(alu_src_a_sel),
         .rs1(rs1),
         .rs2(rs2),
         .rd(rd),
+		  .brOp(brOp),
+		  .branch(is_branch_instr),
         .imm_src(imm_type),
-        .aluB_src(alu_src_b_sel)
+		  .is_jal(is_jal),
+		  .is_jalr(is_jalr),
+		  .is_ebreak(is_ebreak)
     );
 
     // Register File
@@ -128,20 +163,38 @@ module cpu_top (
     );
 
     // ALU Operand B Mux
-    mux2_1 alu_src_mux (
+    mux2_1 B_mux ( //alu_src_mux
         .x(reg_data_b),
         .y(immediate),
         .select(alu_src_b_sel),
         .r(alu_operand_b)
     );
+	 
+	 // ALU operand A Mux
+	 mux2_1 A_Mux (
+        .x(reg_data_a),
+        .y(immediate),
+        .select(alu_src_a_sel),
+        .r(alu_operand_a)
+    );
 
     // ALU
     alu alu_unit (
-        .A(reg_data_a),
+        .A(alu_operand_a),
         .B(alu_operand_b),
         .AluOp(alu_op),
         .AluResult(alu_result)
     );
+	 
+	 branch_unit u_branch_unit(
+		  .brOp(brOp),
+		  .rs1(reg_data_a),
+		  .rs2(reg_data_b),
+		  .pc(pc_current),
+		  .imm_branch(immediate),  
+		  .branch_taken(branch_taken),
+		  .branch_target(branch_target)
+	 );
 
     // Data Memory
     data_memory data_mem (
@@ -160,6 +213,7 @@ module cpu_top (
         .alu_result(alu_result),
         .mem_data(mem_read_data),
         .MemToReg(mem_to_reg),
+		  .pc_next(pc_next),
         .write_back(writeback_data)
     );
 

@@ -29,6 +29,7 @@ always @(*) begin
         4'b0111: AluResult = $signed(A) >>> B[4:0];
         4'b1000: AluResult = ($signed(A) < $signed(B)) ? 32'b1 : 32'b0;
         4'b1001: AluResult = (A < B) ? 32'b1 : 32'b0;
+		  4'b1111: AluResult = B;
     endcase
 
 end

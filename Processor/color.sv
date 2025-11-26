@@ -1,8 +1,7 @@
 module vga_monitor(
-  input clock,               // 50 MHz clock
-  input reset,              // reset
+  input clock,
+  input reset,
 
-  // Señales del procesador
   input [31:0] pc_addr,
   input [31:0] instr,
   input [31:0] alu_result,
@@ -19,12 +18,16 @@ module vga_monitor(
   input [31:0] next_pc,
   input [31:0] alu_B,
   input [31:0] imm_src,
-  input [7:0]  mem [0:127],         // Data Memory (array de bytes)
-  input [31:0] regs_debug [31:0],   // Register File
+  input [7:0]  mem [0:127],
+  input [31:0] regs_debug [31:0],
+  input [2:0] 	brOp,
+  input   		branch_taken,
+  input [31:0] branch_target,
+  input 			is_jalr,
+  input 			is_jal,
 
-  // [FIX 1] Puertos corregidos para la Memoria de Instrucciones
-  output logic [6:0]  inst_mem_debug_addr, // Puerto de SALIDA para pedir una dirección
-  input  logic [31:0] inst_mem_debug_data, // Puerto de ENTRADA para recibir el dato
+  output logic [6:0]  inst_mem_debug_addr, 
+  input  logic [31:0] inst_mem_debug_data, 
 
   output reg [7:0] vga_red,
   output reg [7:0] vga_green,
@@ -34,13 +37,11 @@ module vga_monitor(
   output vga_clock
 );
 
-  // Señales VGA
   wire [10:0] x;
   wire [9:0]  y;
   wire videoOn;
   wire vgaclk;
 
-  // PLL VGA
   clock1280x800 vgaclock(
     .clock50(clock),
     .reset(vgarst),
@@ -49,7 +50,6 @@ module vga_monitor(
 
   assign vga_clock = vgaclk;
 
-  // Controlador VGA 1280x800
   vga_controller_1280x800 ctrl(
     .clk(vgaclk),
     .reset(vgarst),
@@ -60,7 +60,6 @@ module vga_monitor(
     .vcount(y)
   );
 
-  // Instancia de 'font_renderer'
   wire pixel_on;
   wire [7:0] current_ascii;
   wire [3:0] row_in_char;
@@ -75,12 +74,12 @@ module vga_monitor(
   );
 
 
-  // --- Constantes de Layout ---
+  //layout consts
   localparam CHAR_W = 8;
   localparam CHAR_H = 16;
-  localparam CHARS_PER_LINE = 20; // Solo usamos 20 caracteres de ancho
-  localparam LINES_PER_COL = 33;  // Solo usamos 40 líneas de alto
-  localparam LINE_SPACING = CHAR_H + 4; // Espaciado vertical
+  localparam CHARS_PER_LINE = 20;
+  localparam LINES_PER_COL = 33;
+  localparam LINE_SPACING = CHAR_H + 4;
 
   localparam TEXT_START_X_COL0 = 240;
   localparam TEXT_START_X_COL1 = TEXT_START_X_COL0 + (CHARS_PER_LINE*CHAR_W) + 20;
@@ -88,38 +87,29 @@ module vga_monitor(
   localparam TEXT_START_X_COL3 = TEXT_START_X_COL2 + (CHARS_PER_LINE*CHAR_W) + 20;
   localparam TEXT_START_Y = 40;
 
-  // --- Buffers de Texto [OPTIMIZADOS] ---
-  // Declarados al tamaño que realmente se usa (40 líneas x 20 caracteres)
   reg [7:0] text [0:LINES_PER_COL-1][0:CHARS_PER_LINE-1];
   reg [7:0] text2[0:LINES_PER_COL-1][0:CHARS_PER_LINE-1];
   reg [7:0] text3[0:LINES_PER_COL-1][0:CHARS_PER_LINE-1];
   reg [7:0] text4[0:LINES_PER_COL-1][0:CHARS_PER_LINE-1];
 
-  // Función para convertir nibble (4 bits) a caracter ASCII
+  
   function [7:0] num_to_ascii;
     input [3:0] n;
     num_to_ascii = (n < 10) ? (8'd48 + n) : (8'd65 + n - 10);
   endfunction
 
-  // [FIX 2] Contador para leer la memoria de instrucciones secuencialmente
-  // Mostraremos las primeras 16 palabras (0-15)
   reg [4:0] imem_display_addr = 0;
 
-  // [FIX 3] Conectamos el contador al puerto de dirección de memoria de instr.
-  // Pedimos la dirección que indica el contador.
   assign inst_mem_debug_addr = imem_display_addr;
 
 
-  // --- Lógica de Actualización del HUD ---
   always @(posedge vgaclk) begin
     integer i;
     integer base;
     byte b0,b1,b2,b3;
-    logic [31:0] imem_word; // Variable para guardar el dato leído
+    logic [31:0] imem_word;
 
-    // --- Columna 0: Señales del CPU ---
 
-    // INSTR
     text[0][0]  = "I"; text[0][1]  = "N"; text[0][2]  = "S"; text[0][3]  = "T";
     text[0][4]  = "R"; text[0][5]  = ":"; text[0][6]  = " ";
     text[0][7]  = num_to_ascii(instr[31:28]);
@@ -164,7 +154,7 @@ module vga_monitor(
     text[3][11] = num_to_ascii(rs2[7:4]);
     text[3][12] = num_to_ascii(rs2[3:0]);
 
-    // RD (register destination)
+    // RD
     text[4][0]  = "R"; text[4][1]  = "D"; text[4][2]  = ":"; text[4][3]  = " ";
     text[4][4]  = num_to_ascii(rd[31:28]);
     text[4][5]  = num_to_ascii(rd[27:24]);
@@ -284,10 +274,42 @@ module vga_monitor(
     text[14][9] = num_to_ascii(imm_src[11:8]);
     text[14][10] = num_to_ascii(imm_src[7:4]);
     text[14][11] = num_to_ascii(imm_src[3:0]);
+	 
+	 // BOP (Branch Op)
+    text[15][0] = "B"; text[15][1] = "O"; text[15][2] = "P"; text[15][3] = ":";
+    
+    text[15][4] = num_to_ascii({3'b000, brOp[2]}); 
+    
+    text[15][5] = num_to_ascii({3'b000, brOp[1]}); 
+    
+    text[15][6] = num_to_ascii({3'b000, brOp[0]});
+	 
+	 //branch_taken 
+	 
+	 text[16][0] = "B"; text[16][1] = "T";text[16][2] = "K"; text[16][3] = ":";
+    text[16][4] = num_to_ascii(branch_taken);
+	 
+	 //branch_target
+	 
+	 text[17][0] = "B"; text[17][1] = "T";text[17][2] = "G"; text[17][3] = ":";
+	 text[17][4] = num_to_ascii(branch_target[31:28]);
+    text[17][5] = num_to_ascii(branch_target[27:24]);
+    text[17][6] = num_to_ascii(branch_target[23:20]);
+    text[17][7] = num_to_ascii(branch_target[19:15]);
+    text[17][8] = num_to_ascii(branch_target[16:12]);
+    text[17][9] = num_to_ascii(branch_target[11:8]);
+    text[17][10] = num_to_ascii(branch_target[7:4]);
+    text[17][11] = num_to_ascii(branch_target[3:0]);
+	 
+	 // JLR: 0 o 1
+    text[18][1] = "J"; text[18][2] = "L"; text[18][3] = "R"; text[18][4] = ":";
+    text[18][5] = num_to_ascii({3'b000, is_jalr});
+	 
+	 // JAL: 0 o 1
+    text[19][0] = "J"; text[19][1] = "A"; text[19][2] = "L"; text[19][3] = ":";
+    text[19][4] = num_to_ascii({3'b000, is_jal});
 
-
-    // --- Columna 1: Memoria de Datos (text2) ---
-    // Muestra las primeras 16 palabras (64 bytes
+		//Column 1
 	 
 	 text2[0][0] = "D"; text2[0][1] = "M"; text2[0][2] = "E"; text2[0][3] = "M"; 
 
@@ -298,25 +320,21 @@ module vga_monitor(
       b2 = mem[base+2];
       b3 = mem[base+3];
       
-      // Dirección
       text2[i+1][0] = num_to_ascii(base[7:4]);
       text2[i+1][1] = num_to_ascii(base[3:0]);
       text2[i+1][2] = ":";
       text2[i+1][3] = " ";
       
-      // Datos (4 bytes)
-      text2[i+1][4] = num_to_ascii(b3[7:4]); // B3 (MSB)
+      text2[i+1][4] = num_to_ascii(b3[7:4]);
       text2[i+1][5] = num_to_ascii(b3[3:0]);
-      text2[i+1][6] = num_to_ascii(b2[7:4]); // B2
+      text2[i+1][6] = num_to_ascii(b2[7:4]); 
       text2[i+1][7] = num_to_ascii(b2[3:0]);
-      text2[i+1][8] = num_to_ascii(b1[7:4]); // B1
+      text2[i+1][8] = num_to_ascii(b1[7:4]);
       text2[i+1][9] = num_to_ascii(b1[3:0]);
-      text2[i+1][10] = num_to_ascii(b0[7:4]); // B0 (LSB)
+      text2[i+1][10] = num_to_ascii(b0[7:4]);
       text2[i+1][11] = num_to_ascii(b0[3:0]);
     end
 
-    // --- Columna 2: Registros (text3) ---
-    // Muestra los 32 registros
 	 text3[0][0] = "R"; text3[0][1] = "E"; text3[0][2] = "G"; text3[0][3] = "I"; 
     for(i = 0; i < 32; i++) begin
       // Registro (x00, x01, ..., x31)
@@ -342,19 +360,15 @@ module vga_monitor(
 
     base = imem_display_addr * 4; 
     
-    // Guardamos el dato que acaba de llegar
     imem_word = inst_mem_debug_data; 
 
-    // Escribimos la dirección (ej: "0000000C") en la línea 'imem_display_addr'
-    // Asumimos que la dirección de 7 bits [6:0] es suficiente.
     text4[imem_display_addr + 1][0] = "0";
     text4[imem_display_addr + 1][1] = "x";
-    text4[imem_display_addr + 1][2] = num_to_ascii(base[7:4]); // Mostrando solo 8 bits de dirección
+    text4[imem_display_addr + 1][2] = num_to_ascii(base[7:4]);
     text4[imem_display_addr + 1][3] = num_to_ascii(base[3:0]);
     text4[imem_display_addr + 1][4] = ":";
     text4[imem_display_addr + 1][5] = " ";
 
-    // Escribimos el dato (la instrucción en sí)
     text4[imem_display_addr + 1][6]  = num_to_ascii(imem_word[31:28]);
     text4[imem_display_addr + 1][7]  = num_to_ascii(imem_word[27:24]);
     text4[imem_display_addr + 1][8]  = num_to_ascii(imem_word[23:20]);
@@ -365,16 +379,14 @@ module vga_monitor(
     text4[imem_display_addr + 1][13] = num_to_ascii(imem_word[7:4]);
     text4[imem_display_addr + 1][14] = num_to_ascii(imem_word[3:0]);
 
-    // Incrementamos el contador para la PRÓXIMA dirección a pedir
     if (imem_display_addr == 31) begin
-      imem_display_addr <= 0; // Vuelve al inicio
+      imem_display_addr <= 0;
     end else begin
-      imem_display_addr <= imem_display_addr + 1; // Siguiente dirección
+      imem_display_addr <= imem_display_addr + 1;
     end
 
   end 
   
-  // Coordenadas relativas al texto
   wire [6:0] char_col_idx = 
       inside_text_col0 ? (x - TEXT_START_X_COL0) / CHAR_W :
       inside_text_col1 ? (x - TEXT_START_X_COL1) / CHAR_W :
@@ -383,7 +395,6 @@ module vga_monitor(
       
   wire [5:0] line_num_idx = (y - TEXT_START_Y) / LINE_SPACING;
 
-  // Verificamos si el pixel (x,y) está dentro de alguna columna de texto
   wire inside_text_col0 =
     (x >= TEXT_START_X_COL0) && (x < TEXT_START_X_COL0 + CHARS_PER_LINE*CHAR_W) &&
     (y >= TEXT_START_Y)      && (y < TEXT_START_Y + LINES_PER_COL*LINE_SPACING);
@@ -402,16 +413,12 @@ module vga_monitor(
     
   wire inside_any_text = inside_text_col0 || inside_text_col1 || inside_text_col2 || inside_text_col3;
 
-
-  // Seleccionamos el caracter ASCII del buffer correspondiente
   assign current_ascii =
     inside_text_col0 ? text [line_num_idx][char_col_idx] :
     inside_text_col1 ? text2[line_num_idx][char_col_idx] :
     inside_text_col2 ? text3[line_num_idx][char_col_idx] :
     inside_text_col3 ? text4[line_num_idx][char_col_idx] :
-    8'd32; // Espacio (default)
-
-  // Coordenadas dentro del caracter (para el 'font_renderer')
+    8'd32;
   assign row_in_char = (y - TEXT_START_Y - line_num_idx*LINE_SPACING) % CHAR_H;
   
   assign col_in_char = 
@@ -422,33 +429,26 @@ module vga_monitor(
       3'd0;
 
     wire [4:0] y_in_line = (y - TEXT_START_Y) % LINE_SPACING;
-    wire is_in_text_gap = (y_in_line >= CHAR_H); // True si y_in_line es 16, 17, 18, o 19
+    wire is_in_text_gap = (y_in_line >= CHAR_H);
 
-  // --- Asignación Final de Color ---
   always @(*) begin
   
 
     if (~videoOn)
       {vga_red, vga_green, vga_blue} = 24'h000000;
       
-    // [FIX] Si estamos en el gap de 4 pixeles, forzar fondo
     else if (is_in_text_gap)
       {vga_red, vga_green, vga_blue} = 24'h001020;
 
-    // Si la linea es valida, NO estamos en el gap, Y el pixel esta encendido, mostrar texto
     else if ((inside_text_col0 || inside_text_col1 || inside_text_col2 || inside_text_col3 ) && pixel_on)
       {vga_red, vga_green, vga_blue} = 24'h913E61;
     
-    // De lo contrario, fondo
     else
       {vga_red, vga_green, vga_blue} = 24'h001020;
   end
 
 endmodule
 
-// ============================================================
-// Generador de reloj VGA (sin cambios)
-// ============================================================
 module clock1280x800(clock50, reset, vgaclk);
   input clock50;
   input reset;
@@ -463,9 +463,6 @@ module clock1280x800(clock50, reset, vgaclk);
 endmodule
 
 
-// ============================================================
-// Controlador VGA 1280x800 (sin cambios)
-// ============================================================
 module vga_controller_1280x800 (
   input clk,
   input reset,

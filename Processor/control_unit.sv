@@ -4,10 +4,15 @@ module control_unit( // Control Unit (Instruction Decoder)
     output logic        regWrite, // Register write enable
     output logic [4:0]  rs1, rs2, rd, // Source and destination register indices
     output logic [2:0]  imm_src,  // Immediate type selector
-    output logic        aluB_src, // ALU B input source (0=rs2, 1=immediate)
+    output logic        aluB_src, aluA_src, // ALU B input source (0=rs2, 1=immediate)
     output logic        MemRead,  // Memory read enable
     output logic        MemWrite, // Memory write enable
-    output logic        MemToReg  // Select data from memory to write to register
+    output logic [1:0]  MemToReg,  // Select data from memory to write to register
+	 output logic [2:0]	brOp,		 //Branch unit operation mode
+	 output logic			branch,
+	 output logic			is_jal,
+	 output logic			is_jalr,
+	 output logic			is_ebreak
 );
 
     // Extracted fields from instruction
@@ -31,6 +36,13 @@ module control_unit( // Control Unit (Instruction Decoder)
         MemRead  = 0;
         MemWrite = 0;
         MemToReg = 0;
+		  brOp = 3'b010;
+		  aluA_src = 0;
+		  aluB_src = 0;
+		  is_jal   = 0;
+		  is_jalr  = 0;
+		  branch	  = 0;
+		  is_ebreak = 0;
 
         // Decode based on opcode
         case (opcode)
@@ -89,7 +101,68 @@ module control_unit( // Control Unit (Instruction Decoder)
                 imm_src  = 3'b010;   // S-type immediate
                 AluOp    = 4'b0000;  // ADD to calculate memory address
             end
-
+				
+				7'b1100011: begin // B-Type
+					branch = 1;
+					aluA_src = 1; // Uses pc as A operand
+					aluB_src = 1;
+					imm_src = 3'b011;
+					AluOp   = 4'b0000;
+					case(funct3)
+						 3'b000: brOp = 3'b000; // BEQ
+						 3'b001: brOp = 3'b001; // BNE
+						 3'b100: brOp = 3'b100; // BLT
+						 3'b101: brOp = 3'b101; // BGE
+						 3'b110: brOp = 3'b110; // BLTU
+						 3'b111: brOp = 3'b111; // BGEU
+					 endcase
+				end
+				
+				// U-Type
+				7'b0110111: begin // LUI
+					 regWrite = 1;
+					 aluA_src = 0;
+					 aluB_src = 1;
+					 imm_src  = 3'b100;
+					 AluOp    = 4'b1111; 
+				end
+				
+				7'b0010111: begin // AUIPC
+					 regWrite = 1;
+					 aluA_src = 1; 
+					 aluB_src = 1;
+					 imm_src  = 3'b100;
+					 AluOp    = 4'b0000; 
+				end
+				
+				// J-Type
+				7'b1100111: begin // JALR
+					regWrite = 1;      
+					imm_src  = 3'b000; 
+					aluA_src = 0;      
+					aluB_src = 1;      
+					AluOp    = 4'b0000;
+					MemToReg = 2'b10;  
+					is_jalr  = 1;    
+				end	
+				
+				7'b1101111: begin // JAL
+					regWrite = 1;
+					imm_src  = 3'b101; 
+					aluA_src = 0;      
+					aluB_src = 0;     
+					AluOp    = 4'b0000; 
+					MemToReg = 2'b10; 
+					is_jal   = 1; 
+				end
+				
+				7'b1110011: begin  // ebreak
+					if (funct3 == 3'b000 && instr[31:20] == 12'h001) begin
+							is_ebreak = 1;
+							regWrite  = 0;
+					end
+				end
+				
             default: begin
                 // Keep default values
             end
