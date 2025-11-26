@@ -47,8 +47,7 @@ module cpu_top (
     logic [4:0]  rs1, rs2, rd;
     logic [31:0] reg_data_a, reg_data_b;
     logic [31:0] alu_result;
-    logic        zero_flag;
-
+	 
     logic [31:0] immediate;
     logic [31:0] alu_operand_b, alu_operand_a;
     logic [2:0]  imm_type;
@@ -77,7 +76,7 @@ module cpu_top (
 	 assign pc_src = (branch_taken & is_branch_instr) | is_jal;
 	 
     // =====================
-    // Debug display selection (was missing)
+    // Debug display selection
     // =====================
     logic [2:0] display_sel;
     assign display_sel = {sw2, sw1, sw0}; // combine switches into selector

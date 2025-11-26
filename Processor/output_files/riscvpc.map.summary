@@ -1,10 +1,10 @@
-Analysis & Synthesis Status : Successful - Wed Nov 26 15:08:10 2025
+Analysis & Synthesis Status : Successful - Wed Nov 26 17:50:18 2025
 Quartus Prime Version : 24.1std.0 Build 1077 03/04/2025 SC Lite Edition
 Revision Name : riscvpc
 Top-level Entity Name : cpu_top
 Family : Cyclone V
 Logic utilization (in ALMs) : N/A
-Total registers : 3704
+Total registers : 6752
 Total pins : 73
 Total virtual pins : 0
 Total block memory bits : 16,384

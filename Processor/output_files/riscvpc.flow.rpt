@@ -1,5 +1,5 @@
 Flow report for riscvpc
-Wed Nov 26 15:31:43 2025
+Wed Nov 26 17:50:19 2025
 Quartus Prime Version 24.1std.0 Build 1077 03/04/2025 SC Lite Edition
 
 
@@ -41,25 +41,25 @@ on the Quartus Prime software download page.
 +-----------------------------------------------------------------------------------+
 ; Flow Summary                                                                      ;
 +---------------------------------+-------------------------------------------------+
-; Flow Status                     ; Successful - Wed Nov 26 15:31:43 2025           ;
+; Flow Status                     ; Successful - Wed Nov 26 17:50:18 2025           ;
 ; Quartus Prime Version           ; 24.1std.0 Build 1077 03/04/2025 SC Lite Edition ;
 ; Revision Name                   ; riscvpc                                         ;
 ; Top-level Entity Name           ; cpu_top                                         ;
 ; Family                          ; Cyclone V                                       ;
 ; Device                          ; 5CSEMA5F31C6                                    ;
 ; Timing Models                   ; Final                                           ;
-; Logic utilization (in ALMs)     ; 5,449 / 32,070 ( 17 % )                         ;
-; Total registers                 ; 3876                                            ;
-; Total pins                      ; 73 / 457 ( 16 % )                               ;
+; Logic utilization (in ALMs)     ; N/A                                             ;
+; Total registers                 ; 6752                                            ;
+; Total pins                      ; 73                                              ;
 ; Total virtual pins              ; 0                                               ;
-; Total block memory bits         ; 16,384 / 4,065,280 ( < 1 % )                    ;
-; Total DSP Blocks                ; 0 / 87 ( 0 % )                                  ;
+; Total block memory bits         ; 16,384                                          ;
+; Total DSP Blocks                ; 0                                               ;
 ; Total HSSI RX PCSs              ; 0                                               ;
 ; Total HSSI PMA RX Deserializers ; 0                                               ;
 ; Total HSSI TX PCSs              ; 0                                               ;
 ; Total HSSI PMA TX Serializers   ; 0                                               ;
-; Total PLLs                      ; 1 / 6 ( 17 % )                                  ;
-; Total DLLs                      ; 0 / 4 ( 0 % )                                   ;
+; Total PLLs                      ; 1                                               ;
+; Total DLLs                      ; 0                                               ;
 +---------------------------------+-------------------------------------------------+
 
 
@@ -68,7 +68,7 @@ on the Quartus Prime software download page.
 +-------------------+---------------------+
 ; Option            ; Setting             ;
 +-------------------+---------------------+
-; Start date & time ; 11/26/2025 15:07:22 ;
+; Start date & time ; 11/26/2025 17:49:31 ;
 ; Main task         ; Compilation         ;
 ; Revision Name     ; riscvpc             ;
 +-------------------+---------------------+
@@ -79,7 +79,7 @@ on the Quartus Prime software download page.
 +-------------------------------------+----------------------------------------+---------------+-------------+-----------------------------------+
 ; Assignment Name                     ; Value                                  ; Default Value ; Entity Name ; Section Id                        ;
 +-------------------------------------+----------------------------------------+---------------+-------------+-----------------------------------+
-; COMPILER_SIGNATURE_ID               ; 17609908175187.176418764210272         ; --            ; --          ; --                                ;
+; COMPILER_SIGNATURE_ID               ; 17609908175187.176419737119944         ; --            ; --          ; --                                ;
 ; EDA_GENERATE_FUNCTIONAL_NETLIST     ; Off                                    ; --            ; --          ; eda_board_design_timing           ;
 ; EDA_GENERATE_FUNCTIONAL_NETLIST     ; Off                                    ; --            ; --          ; eda_board_design_boundary_scan    ;
 ; EDA_GENERATE_FUNCTIONAL_NETLIST     ; Off                                    ; --            ; --          ; eda_board_design_signal_integrity ;
@@ -104,12 +104,8 @@ on the Quartus Prime software download page.
 +----------------------+--------------+-------------------------+---------------------+------------------------------------+
 ; Module Name          ; Elapsed Time ; Average Processors Used ; Peak Virtual Memory ; Total CPU Time (on all processors) ;
 +----------------------+--------------+-------------------------+---------------------+------------------------------------+
-; Analysis & Synthesis ; 00:00:48     ; 4.5                     ; 5102 MB             ; 00:02:49                           ;
-; Fitter               ; 00:22:32     ; 1.1                     ; 8055 MB             ; 02:26:14                           ;
-; Assembler            ; 00:00:20     ; 1.0                     ; 5304 MB             ; 00:00:13                           ;
-; Timing Analyzer      ; 00:00:24     ; 4.6                     ; 5588 MB             ; 00:01:20                           ;
-; EDA Netlist Writer   ; 00:00:06     ; 1.0                     ; 4953 MB             ; 00:00:05                           ;
-; Total                ; 00:24:10     ; --                      ; --                  ; 02:30:41                           ;
+; Analysis & Synthesis ; 00:00:45     ; 5.8                     ; 5129 MB             ; 00:03:01                           ;
+; Total                ; 00:00:45     ; --                      ; --                  ; 00:03:01                           ;
 +----------------------+--------------+-------------------------+---------------------+------------------------------------+
 
 
@@ -119,10 +115,6 @@ on the Quartus Prime software download page.
 ; Module Name          ; Machine Hostname ; OS Name    ; OS Version ; Processor type ;
 +----------------------+------------------+------------+------------+----------------+
 ; Analysis & Synthesis ; Camilo           ; Windows 10 ; 10.0       ; x86_64         ;
-; Fitter               ; Camilo           ; Windows 10 ; 10.0       ; x86_64         ;
-; Assembler            ; Camilo           ; Windows 10 ; 10.0       ; x86_64         ;
-; Timing Analyzer      ; Camilo           ; Windows 10 ; 10.0       ; x86_64         ;
-; EDA Netlist Writer   ; Camilo           ; Windows 10 ; 10.0       ; x86_64         ;
 +----------------------+------------------+------------+------------+----------------+
 
 
@@ -130,10 +122,6 @@ on the Quartus Prime software download page.
 ; Flow Log ;
 ------------
 quartus_map --read_settings_files=on --write_settings_files=off riscvpc -c riscvpc
-quartus_fit --read_settings_files=off --write_settings_files=off riscvpc -c riscvpc
-quartus_asm --read_settings_files=off --write_settings_files=off riscvpc -c riscvpc
-quartus_sta riscvpc -c riscvpc
-quartus_eda --read_settings_files=off --write_settings_files=off riscvpc -c riscvpc
 
 
 
