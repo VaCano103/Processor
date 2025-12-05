@@ -15,10 +15,9 @@ module control_unit( // Control Unit (Instruction Decoder)
 	 output logic			is_ebreak
 );
 
-    // Extracted fields from instruction
-    logic [6:0] opcode;  // opcode field
-    logic [2:0] funct3;  // funct3 field
-    logic [6:0] funct7;  // funct7 field
+    logic [6:0] opcode;  // opcode
+    logic [2:0] funct3;  // funct3
+    logic [6:0] funct7;  // funct7
 
     assign opcode = instr[6:0];
     assign rd     = instr[11:7];
@@ -28,7 +27,6 @@ module control_unit( // Control Unit (Instruction Decoder)
     assign funct7 = instr[31:25];
 
     always_comb begin
-        // Default values to prevent latches
         regWrite = 0;
         AluOp    = 4'b0000;
         imm_src  = 3'b000;
@@ -156,7 +154,7 @@ module control_unit( // Control Unit (Instruction Decoder)
 					is_jal   = 1; 
 				end
 				
-				7'b1110011: begin  // ebreak
+				7'b1110011: begin  // EBREAK
 					if (funct3 == 3'b000 && instr[31:20] == 12'h001) begin
 							is_ebreak = 1;
 							regWrite  = 0;
@@ -164,7 +162,6 @@ module control_unit( // Control Unit (Instruction Decoder)
 				end
 				
             default: begin
-                // Keep default values
             end
         endcase
     end

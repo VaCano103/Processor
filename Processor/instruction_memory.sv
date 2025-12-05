@@ -1,10 +1,8 @@
 module instruction_memory (
-    // CPU instruction port
     input  logic [31:0] addr,
     output logic [31:0] instr,
 
-    // Debug port (VGA)
-    input  logic [6:0]  debug_addr,  // 7 bits to address 128 entries
+    input  logic [6:0]  debug_addr,
     output logic [31:0] debug_data
 );
 
@@ -16,14 +14,12 @@ module instruction_memory (
        $readmemb("program.bin", memory);
     end
 
-    // Instruction read (combinational)
+    // Instruction read
     always_comb begin
         instr = memory[addr[8:2]];
     end
 
-    // Debug read (combinational)
+    // Debug read
     assign debug_data = memory[debug_addr];
-
-    // The assignment "assign memory_debug = memory;" has been removed.
 
 endmodule

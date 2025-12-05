@@ -1,7 +1,7 @@
 module mux_mem (// if reading from ALU or memory
     input  logic [31:0] alu_result,
     input  logic [31:0] mem_data,
-    input  logic        MemToReg,   // control: 0 = ALU, 1 = Memory
+    input  logic [1:0]  MemToReg,   // control: 00 = ALU, 01 = Memory, 10 = JAL Y JALR
 	 input  logic [31:0] pc_next,
     output logic [31:0] write_back
 );

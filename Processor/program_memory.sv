@@ -1,7 +1,4 @@
 module data_memory (
-    // =====================
-    // Control and Data Signals
-    // =====================
     input  logic         clk,           // Clock signal
     input  logic         mem_read,      // Memory read enable
     input  logic         mem_write,     // Memory write enable
@@ -10,21 +7,12 @@ module data_memory (
     input  logic [31:0]  write_data,    // Data to be written into memory
     output logic [31:0]  read_data,     // Data read from memory
 
-    // =====================
-    // Debug Interface
-    // =====================
     output logic [7:0]   mem_debug [0:127]  // Memory debug output
 );
 
-    // =====================
-    // Internal Memory Arrays
-    // =====================
     logic [7:0]  mem [0:127];          // 128 bytes of memory (data memory)
     logic [31:0] init_mem [0:31];      // Temporary 32-word memory for initialization
 
-    // =====================
-    // 1. Memory Initialization
-    // =====================
     // Load memory content from a hex file and unpack words into bytes.
     initial begin
         $readmemh("memory.hex", init_mem);
@@ -35,11 +23,7 @@ module data_memory (
             mem[i*4 + 3] = init_mem[i][31:24];  // Most significant byte (MSB)
         end
     end
-
-    // =====================
-    // 2. Write Operations
-    // =====================
-    // Perform memory writes on the positive clock edge if enabled.
+	 
     always_ff @(posedge clk) begin
         if (mem_write) begin
             unique case (funct3)
@@ -59,10 +43,6 @@ module data_memory (
         end
     end
 
-    // =====================
-    // 3. Read Operations
-    // =====================
-    // Combinational read logic for signed and unsigned loads.
     always_comb begin
         if (mem_read) begin
             unique case (funct3)
@@ -82,9 +62,6 @@ module data_memory (
         end
     end
 
-    // =====================
-    // 4. Debug Output
-    // =====================
     assign mem_debug = mem;
 
 endmodule
